@@ -7,6 +7,7 @@ from pathlib import Path
 import psutil
 import subprocess
 import queue
+from send2trash import send2trash
 
 texts = {
     'en': {
@@ -52,7 +53,104 @@ texts = {
         'language': 'Bahasa'
     }
 }
+def check_disk_usage():
+    disk = psutil.disk_usage('/')
+    return f"Disk Usage: {disk.percent}%"
+def clean_temp():
+    temp_dirs = [
+        Path(os.environ['TEMP']),
+        Path('C:/Windows/Temp')
+    ]
+    for temp_dir in temp_dirs:
+        if temp_dir.exists() and temp_dir.is_dir():
+            for item in temp_dir.iterdir():
+                try:
+                    if item.is_file():
+                        item.unlink()
+                    elif item.is_dir():
+                        shutil.rmtree(item)
+                except Exception as e:
+                    print(f"Failed to delete {item}: {e}")
 
+def clean_recycle_bin():
+    try:
+        for root, dirs, files in os.walk("C:/$Recycle.Bin"):
+            for file in files:
+                try:
+                    send2trash(os.path.join(root, file))
+                except Exception as e:
+                    print(f"Failed to delete {file}: {e}")
+    except Exception as e:
+        print(f"Error cleaning Recycle Bin: {e}")
+
+def clean_prefetch():
+    prefetch_dir = Path('C:/Windows/Prefetch')
+    if prefetch_dir.exists() and prefetch_dir.is_dir():
+        for item in prefetch_dir.iterdir():
+            try:
+                if item.is_file():
+                    item.unlink()  # Remove file
+            except Exception as e:
+                print(f"Failed to delete {item}: {e}")
+
+def clean_recent():
+    recent_dir = Path(os.path.expanduser('~')) / 'Recent'
+    if recent_dir.exists() and recent_dir.is_dir():
+        for item in recent_dir.iterdir():
+            try:
+                item.unlink()  # Remove file
+            except Exception as e:
+                print(f"Failed to delete {item}: {e}")
+
+def clean_windows_logs():
+    windows_logs_dir = Path('C:/Windows/Logs')
+    if windows_logs_dir.exists() and windows_logs_dir.is_dir():
+        for item in windows_logs_dir.iterdir():
+            try:
+                if item.is_file():
+                    item.unlink()  # Remove file
+                elif item.is_dir():
+                    shutil.rmtree(item)  # Remove directory
+            except Exception as e:
+                print(f"Failed to delete {item}: {e}")
+
+def clean_thumbnail_cache():
+    thumbnail_cache_dir = Path('C:/Users') / Path(os.getenv('USERNAME')) / 'AppData/Local/Microsoft/Windows/Explorer'
+    if thumbnail_cache_dir.exists() and thumbnail_cache_dir.is_dir():
+        for item in thumbnail_cache_dir.iterdir():
+            try:
+                if item.is_file():
+                    item.unlink()  # Remove file
+            except Exception as e:
+                print(f"Failed to delete {item}: {e}")
+
+def clean_registry():
+    try:
+        subprocess.run("reg delete HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs /f", shell=True)
+        print("Registry cleaned.")
+    except Exception as e:
+        print(f"Failed to clean registry: {e}")
+
+def clear_dns_cache():
+    try:
+        subprocess.run("ipconfig /flushdns", shell=True)
+        print("DNS cache cleared.")
+    except Exception as e:
+        print(f"Failed to clear DNS cache: {e}")
+
+def check_drivers():
+    try:
+        result = subprocess.run("driverquery", capture_output=True, text=True, shell=True)
+        if result.returncode == 0:
+            drivers = result.stdout
+            print("Drivers List: ")
+            print(drivers)
+        else:
+            print("Failed to retrieve drivers information.")
+    except Exception as e:
+        print(f"Failed to check drivers: {e}")
+        
+                    
 def clean_browser_cache():
     browsers = [
         Path(os.environ['LOCALAPPDATA']) / 'Google/Chrome/User Data/Default/Cache',
